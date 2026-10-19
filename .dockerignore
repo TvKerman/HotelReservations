@@ -1,0 +1,11 @@
+**/target
+**/.git
+**/.idea
+**/*.iml
+**/.mvn
+**/.gradle
+**/build
+**/out
+**/*.log
+README.md
+docker-compose.yml

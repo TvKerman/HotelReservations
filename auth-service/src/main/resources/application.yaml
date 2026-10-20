@@ -4,8 +4,34 @@ server:
 spring:
   application:
     name: auth-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/booking_db
+    username: booking_user
+    password: booking_pass
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    table: flyway_schema_history_auth
 
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+app:
+  security:
+    jwt:
+      # В проде - только через переменную окружения JWT_SECRET.
+      # Длина >= 32 байта (256 бит). Здесь dev-дефолт.
+      secret: ${JWT_SECRET:dev-secret-change-me-please-1234567890-abcdef}
+      ttl: PT1H
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

@@ -5,7 +5,7 @@ spring:
   application:
     name: auth-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/booking_db
+    url: jdbc:postgresql://localhost:5432/booking_auth
     username: booking_user
     password: booking_pass
   jpa:
@@ -14,7 +14,6 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
-    baseline-on-migrate: true
     table: flyway_schema_history_auth
 
 eureka:

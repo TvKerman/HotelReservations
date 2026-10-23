@@ -4,8 +4,58 @@ server:
 spring:
   application:
     name: booking-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/booking_booking
+    username: booking_user
+    password: booking_pass
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    table: flyway_schema_history_booking
+  cloud:
+    openfeign:
+      client:
+        config:
+          hotel-service:
+            connectTimeout: 2000
+            readTimeout: 3000
+            loggerLevel: basic
 
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:dev-secret-change-me-please-1234567890-abcdef}
+
+resilience4j:
+  retry:
+    instances:
+      hotelClient:
+        max-attempts: 3
+        wait-duration: 200ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - feign.RetryableException
+          - java.io.IOException
+  circuitbreaker:
+    instances:
+      hotelClient:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 5s
+        permitted-number-of-calls-in-half-open-state: 3
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

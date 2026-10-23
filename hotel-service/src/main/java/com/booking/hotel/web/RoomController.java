@@ -58,4 +58,10 @@ public class RoomController {
     public void increment(@PathVariable Long hotelId, @PathVariable Long roomId) {
         rooms.incrementBooked(roomId);
     }
+
+    @PostMapping("/{roomId}/decrement-booked")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    public void decrement(@PathVariable Long hotelId, @PathVariable Long roomId) {
+        rooms.decrementBooked(roomId);
+    }
 }

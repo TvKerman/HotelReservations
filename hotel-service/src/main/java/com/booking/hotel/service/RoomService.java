@@ -97,6 +97,12 @@ public class RoomService {
         r.setTimesBooked(r.getTimesBooked() + 1);
     }
 
+    public void decrementBooked(Long roomId) {
+        Room r = rooms.findById(roomId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Room not found: " + roomId));
+        r.setTimesBooked(Math.max(0, r.getTimesBooked() - 1));
+    }
+
     private RoomDto toDto(Room r) {
         return new RoomDto(r.getId(), r.getHotel().getId(), r.getNumber(), r.getCapacity(),
                 r.getPrice(), r.getTimesBooked());

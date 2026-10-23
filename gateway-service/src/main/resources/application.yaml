@@ -34,3 +34,21 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:dev-secret-change-me-please-1234567890-abcdef}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  tracing:
+    sampling:
+      probability: 1.0
+
+logging:
+  pattern:
+    level: "%5p [traceId:%X{traceId:-}]"

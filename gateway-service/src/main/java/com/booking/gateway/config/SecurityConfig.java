@@ -1,5 +1,6 @@
 package com.booking.gateway.config;
 
+import com.booking.gateway.error.GatewaySecurityErrorHandler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,18 +29,23 @@ public class SecurityConfig {
     @Bean
     SecurityWebFilterChain securityWebFilterChain(
             ServerHttpSecurity http,
-            Converter<Jwt, Mono<AbstractAuthenticationToken>> jwtAuthConverter) {
+            Converter<Jwt, Mono<AbstractAuthenticationToken>> jwtAuthConverter,
+            GatewaySecurityErrorHandler errorHandler) {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
                 .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(errorHandler)
+                        .accessDeniedHandler(errorHandler))
                 .authorizeExchange(ex -> ex
-
                         .pathMatchers("/api/auth/register", "/api/auth/login").permitAll()
                         .pathMatchers("/actuator/health", "/actuator/info").permitAll()
                         .pathMatchers("/error", "/error/**").permitAll()
                         .anyExchange().authenticated())
                 .oauth2ResourceServer(oauth -> oauth
+                        .authenticationEntryPoint(errorHandler)   // <-- ключевое
+                        .accessDeniedHandler(errorHandler)
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthConverter)))
                 .build();
     }

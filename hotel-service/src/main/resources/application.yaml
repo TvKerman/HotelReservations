@@ -34,3 +34,7 @@ management:
     web:
       exposure:
         include: health,info
+
+logging:
+  pattern:
+    level: "%5p [traceId:%X{traceId:-}]"

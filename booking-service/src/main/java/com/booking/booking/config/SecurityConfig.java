@@ -1,5 +1,7 @@
 package com.booking.booking.config;
 
+import com.booking.common.error.JsonSecurityErrorHandler;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,14 +24,27 @@ import java.util.List;
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationConverter converter) throws Exception {
+    JsonSecurityErrorHandler jsonSecurityErrorHandler(ObjectMapper objectMapper) {
+        return new JsonSecurityErrorHandler(objectMapper);
+    }
+
+    @Bean
+    SecurityFilterChain filterChain(HttpSecurity http,
+                                    JwtAuthenticationConverter converter,
+                                    JsonSecurityErrorHandler errorHandler) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/error", "/error/**", "/actuator/health", "/actuator/info").permitAll()
                         .anyRequest().authenticated())
-                .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(converter)));
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(errorHandler)
+                        .accessDeniedHandler(errorHandler))
+                .oauth2ResourceServer(oauth -> oauth
+                        .authenticationEntryPoint(errorHandler)
+                        .accessDeniedHandler(errorHandler)
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(converter)));
         return http.build();
     }
 

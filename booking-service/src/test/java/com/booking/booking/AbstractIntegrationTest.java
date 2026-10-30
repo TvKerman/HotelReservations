@@ -9,14 +9,14 @@ import org.testcontainers.containers.PostgreSQLContainer;
 @ActiveProfiles("test")
 public abstract class AbstractIntegrationTest {
 
-    @ServiceConnection
-    static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:16-alpine")
-                    .withDatabaseName("booking_booking")
-                    .withUsername("booking_user")
-                    .withPassword("booking_pass");
+  @ServiceConnection
+  static final PostgreSQLContainer<?> POSTGRES =
+      new PostgreSQLContainer<>("postgres:16-alpine")
+          .withDatabaseName("booking_booking")
+          .withUsername("booking_user")
+          .withPassword("booking_pass");
 
-    static {
-        POSTGRES.start();
-    }
+  static {
+    POSTGRES.start();
+  }
 }

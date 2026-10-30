@@ -1,7 +1,10 @@
 package com.booking.booking.config;
 
-import com.booking.common.error.JsonSecurityErrorHandler;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+import javax.crypto.spec.SecretKeySpec;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,57 +18,62 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
-import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
+import com.booking.common.error.JsonSecurityErrorHandler;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    @Bean
-    JsonSecurityErrorHandler jsonSecurityErrorHandler(ObjectMapper objectMapper) {
-        return new JsonSecurityErrorHandler(objectMapper);
-    }
+  @Bean
+  JsonSecurityErrorHandler jsonSecurityErrorHandler(ObjectMapper objectMapper) {
+    return new JsonSecurityErrorHandler(objectMapper);
+  }
 
-    @Bean
-    SecurityFilterChain filterChain(HttpSecurity http,
-                                    JwtAuthenticationConverter converter,
-                                    JsonSecurityErrorHandler errorHandler) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/error", "/error/**", "/actuator/health", "/actuator/info").permitAll()
-                        .anyRequest().authenticated())
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(errorHandler)
-                        .accessDeniedHandler(errorHandler))
-                .oauth2ResourceServer(oauth -> oauth
-                        .authenticationEntryPoint(errorHandler)
-                        .accessDeniedHandler(errorHandler)
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(converter)));
-        return http.build();
-    }
+  @Bean
+  SecurityFilterChain filterChain(
+      HttpSecurity http,
+      JwtAuthenticationConverter converter,
+      JsonSecurityErrorHandler errorHandler)
+      throws Exception {
+    http.csrf(csrf -> csrf.disable())
+        .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .authorizeHttpRequests(
+            auth ->
+                auth.requestMatchers("/error", "/error/**", "/actuator/health", "/actuator/info")
+                    .permitAll()
+                    .anyRequest()
+                    .authenticated())
+        .exceptionHandling(
+            ex -> ex.authenticationEntryPoint(errorHandler).accessDeniedHandler(errorHandler))
+        .oauth2ResourceServer(
+            oauth ->
+                oauth
+                    .authenticationEntryPoint(errorHandler)
+                    .accessDeniedHandler(errorHandler)
+                    .jwt(jwt -> jwt.jwtAuthenticationConverter(converter)));
+    return http.build();
+  }
 
-    @Bean
-    JwtDecoder jwtDecoder(@Value("${app.security.jwt.secret}") String secret) {
-        if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
-            throw new IllegalStateException("JWT secret must be at least 32 bytes");
-        }
-        var key = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-        return NimbusJwtDecoder.withSecretKey(key).macAlgorithm(MacAlgorithm.HS256).build();
+  @Bean
+  JwtDecoder jwtDecoder(@Value("${app.security.jwt.secret}") String secret) {
+    if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+      throw new IllegalStateException("JWT secret must be at least 32 bytes");
     }
+    var key = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+    return NimbusJwtDecoder.withSecretKey(key).macAlgorithm(MacAlgorithm.HS256).build();
+  }
 
-    @Bean
-    JwtAuthenticationConverter jwtAuthenticationConverter() {
-        var converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-            String role = jwt.getClaimAsString("role");
-            return (role == null || role.isBlank())
-                    ? List.of()
-                    : List.of(new SimpleGrantedAuthority("ROLE_" + role));
+  @Bean
+  JwtAuthenticationConverter jwtAuthenticationConverter() {
+    var converter = new JwtAuthenticationConverter();
+    converter.setJwtGrantedAuthoritiesConverter(
+        jwt -> {
+          String role = jwt.getClaimAsString("role");
+          return (role == null || role.isBlank())
+              ? List.of()
+              : List.of(new SimpleGrantedAuthority("ROLE_" + role));
         });
-        return converter;
-    }
+    return converter;
+  }
 }

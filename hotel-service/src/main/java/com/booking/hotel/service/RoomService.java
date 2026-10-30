@@ -95,12 +95,14 @@ public class RoomService {
         Room r = rooms.findById(roomId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Room not found: " + roomId));
         r.setTimesBooked(r.getTimesBooked() + 1);
+        rooms.saveAndFlush(r);
     }
 
     public void decrementBooked(Long roomId) {
         Room r = rooms.findById(roomId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Room not found: " + roomId));
         r.setTimesBooked(Math.max(0, r.getTimesBooked() - 1));
+        rooms.saveAndFlush(r);
     }
 
     private RoomDto toDto(Room r) {

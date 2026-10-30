@@ -1,0 +1,33 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  datasource:
+    hikari:
+      maximum-pool-size: 20
+  cloud:
+    discovery:
+      enabled: false
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+resilience4j:
+  retry:
+    instances:
+      hotelClient:
+        max-attempts: 2
+        wait-duration: 10ms
+        enable-exponential-backoff: false
+  circuitbreaker:
+    instances:
+      hotelClient:
+        sliding-window-size: 10
+        minimum-number-of-calls: 1000
+        failure-rate-threshold: 99

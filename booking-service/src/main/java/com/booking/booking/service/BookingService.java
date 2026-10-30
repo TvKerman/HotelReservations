@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.dao.CannotAcquireLockException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -82,6 +83,9 @@ public class BookingService {
                 if (existing.isPresent()) return toDto(existing.get());
             }
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Room is already booked for these dates");
+        } catch (CannotAcquireLockException e) {
+            log.warn("Deadlock during concurrent booking for room {}, treating as conflict", roomId);
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Booking conflict, please retry");
         }
 
         try {
@@ -96,6 +100,11 @@ public class BookingService {
         try {
             booking.setStatus(BookingStatus.CONFIRMED);
             bookings.saveAndFlush(booking);
+        } catch (CannotAcquireLockException e) {
+            log.warn("Deadlock on confirm for bookingId={}", booking.getId());
+            try { resilientClient.decrementBooked(req.hotelId(), roomId); } catch (Exception ignore) {}
+            booking.setStatus(BookingStatus.CANCELLED);
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Booking conflict, please retry");
         } catch (Exception e) {
             log.error("Confirm failed for bookingId={}, compensating", booking.getId(), e);
             try {
@@ -147,7 +156,7 @@ public class BookingService {
         }
         b.setStatus(BookingStatus.CANCELLED);
         try {
-            hotelClient.decrementBooked(b.getHotelId(), b.getRoomId());
+            resilientClient.decrementBooked(b.getHotelId(), b.getRoomId());
         } catch (Exception e) {
             log.warn("Decrement on cancel failed for bookingId={}: {}", b.getId(), e.getMessage());
         }

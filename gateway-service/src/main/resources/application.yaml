@@ -45,10 +45,7 @@ management:
     web:
       exposure:
         include: health,info
-  tracing:
-    sampling:
-      probability: 1.0
 
 logging:
   pattern:
-    level: "%5p [traceId:%X{traceId:-}]"
+    level: "%5p [traceId:%X{traceId:-no-trace}]"

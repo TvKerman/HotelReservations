@@ -62,4 +62,4 @@ management:
 
 logging:
   pattern:
-    level: "%5p [traceId:%X{traceId:-}]"
+    level: "%5p [traceId:%X{traceId:-no-trace}]"

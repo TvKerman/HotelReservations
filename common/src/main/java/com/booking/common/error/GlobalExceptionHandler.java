@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -48,6 +49,21 @@ public class GlobalExceptionHandler {
                 "FORBIDDEN",
                 ErrorCode.FORBIDDEN,
                 "Access denied",
+                req.getRequestURI(),
+                traceId(req)));
+  }
+
+  @ExceptionHandler(PropertyReferenceException.class)
+  public ResponseEntity<ErrorDTO> handlePropertyReference(
+      PropertyReferenceException ex, HttpServletRequest req) {
+    log.warn("{} {} -> 400 BAD_REQUEST: {}", req.getMethod(), req.getRequestURI(), ex.getMessage());
+    return ResponseEntity.badRequest()
+        .body(
+            ErrorDTO.of(
+                400,
+                "BAD_REQUEST",
+                ErrorCode.BAD_REQUEST,
+                "Invalid sort field: " + ex.getPropertyName(),
                 req.getRequestURI(),
                 traceId(req)));
   }

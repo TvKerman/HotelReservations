@@ -1,16 +1,52 @@
 server:
   port: 8080
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: auth-service
+        url: /api/auth/v3/api-docs
+      - name: hotel-service
+        url: /api/hotels/v3/api-docs
+      - name: booking-service
+        url: /api/bookings/v3/api-docs
+
 spring:
   application:
     name: gateway-service
   cloud:
     gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
       discovery:
         locator:
           enabled: true
           lower-case-service-id: true
       routes:
+        - id: auth-swagger-route
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/v3/api-docs
+          filters:
+            - StripPrefix=2
+        - id: hotel-swagger-route
+          uri: lb://hotel-service
+          predicates:
+            - Path=/api/hotels/v3/api-docs
+          filters:
+            - StripPrefix=2
+        - id: booking-swagger-route
+          uri: lb://booking-service
+          predicates:
+            - Path=/api/bookings/v3/api-docs
+          filters:
+            - StripPrefix=2
+
         - id: hotel-service-route
           uri: lb://hotel-service
           predicates:

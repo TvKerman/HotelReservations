@@ -43,6 +43,13 @@ public class SecurityConfig {
             ex ->
                 ex.pathMatchers("/api/auth/register", "/api/auth/login")
                     .permitAll()
+                    .pathMatchers(
+                        "/swagger-ui.html",
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**",
+                        "/webjars/**",
+                        "/api/*/v3/api-docs/**")
+                    .permitAll()
                     .pathMatchers("/actuator/health", "/actuator/info")
                     .permitAll()
                     .pathMatchers("/error", "/error/**")
@@ -52,7 +59,7 @@ public class SecurityConfig {
         .oauth2ResourceServer(
             oauth ->
                 oauth
-                    .authenticationEntryPoint(errorHandler) // <-- ключевое
+                    .authenticationEntryPoint(errorHandler)
                     .accessDeniedHandler(errorHandler)
                     .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthConverter)))
         .build();

@@ -6,8 +6,10 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -19,6 +21,7 @@ public class GlobalExceptionHandler {
   private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
   public static final String TRACE_HEADER = "X-Correlation-Id";
+  public static final String MDC_KEY = "traceId";
 
   @ExceptionHandler(ResponseStatusException.class)
   public ResponseEntity<ErrorDTO> handleResponseStatus(
@@ -32,6 +35,21 @@ public class GlobalExceptionHandler {
         .body(
             ErrorDTO.of(
                 status.value(), status.name(), code, message, req.getRequestURI(), traceId(req)));
+  }
+
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ErrorDTO> handleAccessDenied(
+      AccessDeniedException ex, HttpServletRequest req) {
+    log.warn("{} {} -> 403: {}", req.getMethod(), req.getRequestURI(), ex.getMessage());
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        .body(
+            ErrorDTO.of(
+                403,
+                "FORBIDDEN",
+                ErrorCode.FORBIDDEN,
+                "Access denied",
+                req.getRequestURI(),
+                traceId(req)));
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -95,6 +113,8 @@ public class GlobalExceptionHandler {
   }
 
   private String traceId(HttpServletRequest req) {
-    return req.getHeader(TRACE_HEADER);
+    String header = req.getHeader(TRACE_HEADER);
+    if (header != null && !header.isBlank()) return header;
+    return MDC.get(MDC_KEY);
   }
 }

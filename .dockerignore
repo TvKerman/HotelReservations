@@ -1,11 +1,9 @@
-**/target
-**/.git
-**/.idea
+**/target/
+**/.git/
+**/.idea/
 **/*.iml
-**/.mvn
-**/.gradle
-**/build
-**/out
-**/*.log
+**/.mvn/
+.gitignore
 README.md
 docker-compose.yml
+*.log

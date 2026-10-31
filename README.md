@@ -12,6 +12,7 @@
 - [Тестовые данные](#тестовые-данные)
 - [Тестирование](#тестирование)
 - [HTTP API](#http-api)
+- [Swagger UI](#swagger-ui)
 - [Формат ошибок](#формат-ошибок)
 - [Архитектурные решения](#архитектурные-решения)
 - [Структура репозитория](#структура-репозитория)
@@ -74,6 +75,7 @@ flowchart TB
 | Хранилище | PostgreSQL 16, Spring Data JPA, Hibernate 6, Flyway |
 | Тестирование | JUnit 5, Mockito, MockMvc, WebTestClient, Testcontainers |
 | Сборка и запуск | Maven, Docker Compose |
+| Документация API | SpringDoc OpenAPI 3 (Swagger UI) |
 
 ## Развёртывание
 
@@ -199,6 +201,22 @@ PATCH  /api/bookings/{id}/cancel
 
 Пользователь с ролью `USER` получает только собственные бронирования. `ADMIN` — все. Проверка прав выполняется на уровне сервисного слоя.
 
+## Swagger UI
+
+Для удобства разработки и тестирования API в проект интегрирован агрегированный Swagger UI. Все спецификации OpenAPI собираются через API Gateway, что позволяет работать с тремя сервисами из одного окна.
+
+**Доступ:** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+
+### Как пользоваться
+1. В правом верхнем углу выберите нужный сервис в выпадающем списке (`auth-service`, `hotel-service`, `booking-service`).
+2. Для тестирования защищённых эндпойнтов (отели, бронирования):
+    - Выполните `POST /api/auth/register` или `/login`, чтобы получить `accessToken`.
+    - Нажмите кнопку **Authorize** в правом верхнем углу.
+    - Вставьте полученный токен (без префикса `Bearer`) и нажмите **Authorize**.
+3. Теперь вы можете вызывать любые защищённые методы прямо из интерфейса (кнопка **Try it out**).
+
+*Все запросы из Swagger UI автоматически маршрутизируются через Gateway (порт 8080).*
+
 ## Формат ошибок
 
 Все ответы 4xx и 5xx возвращаются в едином формате:
@@ -219,13 +237,14 @@ PATCH  /api/bookings/{id}/cancel
 
 ## Архитектурные решения
 
-| ADR | Тема |
-|---|---|
-| [ADR-001](docs/adr/001-saga.md) | Оркестрация распределённой транзакции через сагу с компенсацией |
-| [ADR-002](docs/adr/002-idempotency.md) | Идемпотентность через `Idempotency-Key` и частичный уникальный индекс |
-| [ADR-003](docs/adr/003-algorithm.md) | Алгоритм выбора номера и защита от конкурентного overbooking |
-| [ADR-004](docs/adr/004-jwt.md) | Аутентификация: JWT (HS256) и валидация на уровне каждого сервиса |
-| [ADR-005](docs/adr/005-errors.md) | Унификация формата ошибок и correlation ID |
+| ADR                                            | Тема |
+|------------------------------------------------|---|
+| [ADR-001](docs/adr/001-saga.md)                | Оркестрация распределённой транзакции через сагу с компенсацией |
+| [ADR-002](docs/adr/002-idempotency.md)         | Идемпотентность через `Idempotency-Key` и частичный уникальный индекс |
+| [ADR-003](docs/adr/003-algorithm.md)           | Алгоритм выбора номера и защита от конкурентного overbooking |
+| [ADR-004](docs/adr/004-jwt.md)                 | Аутентификация: JWT (HS256) и валидация на уровне каждого сервиса |
+| [ADR-005](docs/adr/005-errors.md)              | Унификация формата ошибок и correlation ID |
+| [ADR-006](docs/adr/006-swagger-aggregation.md) | Агрегация Swagger UI через API Gateway |
 
 ## Структура репозитория
 
@@ -242,7 +261,8 @@ PATCH  /api/bookings/{id}/cancel
 │       ├── 002-idempotency.md
 │       ├── 003-algorithm.md
 │       ├── 004-jwt.md
-│       └── 005-errors.md
+│       ├── 005-errors.md
+│       └── 006-swagger-aggregation.md
 ├── common/
 ├── discovery-service/
 ├── gateway-service/

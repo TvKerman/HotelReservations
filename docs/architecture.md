@@ -20,6 +20,7 @@
 - **Валидация JWT.** Реализован `ReactiveJwtDecoder` (Nimbus, HS256). Запросы без валидного токена отклоняются до передачи в downstream.
 - **Correlation ID.** Фильтр `TraceIdFilter` извлекает `X-Correlation-Id` из входящего запроса или генерирует новый, добавляет его в заголовки исходящего запроса и в ответ клиенту.
 - **Обработка ошибок.** `GatewaySecurityErrorHandler` (для 401/403) и `GatewayExceptionHandler` (для остальных исключений) возвращают ответы в едином формате `ErrorDTO`.
+- **Агрегация документации.** Gateway собирает спецификации OpenAPI (Swagger) от `auth`, `hotel` и `booking` сервисов по специальным маршрутам (`/api/*/v3/api-docs`) и предоставляет единый интерфейс Swagger UI для разработчиков.
 
 Публичные маршруты без аутентификации: `/api/auth/register`, `/api/auth/login`, `/actuator/health`, `/actuator/info`, `/error`.
 

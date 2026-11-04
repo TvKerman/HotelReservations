@@ -1,8 +1,6 @@
 package com.booking.common.error;
 
 public enum ErrorCode {
-
-  // Общие
   BAD_REQUEST,
   VALIDATION_FAILED,
   UNAUTHORIZED,
@@ -12,17 +10,14 @@ public enum ErrorCode {
   INTERNAL_ERROR,
   SERVICE_UNAVAILABLE,
 
-  // Auth
   EMAIL_ALREADY_REGISTERED,
   INVALID_CREDENTIALS,
 
-  // Hotel
   HOTEL_NOT_FOUND,
   ROOM_NOT_FOUND,
   ROOM_NUMBER_DUPLICATE,
   ROOM_NOT_IN_HOTEL,
 
-  // Booking
   BOOKING_NOT_FOUND,
   BOOKING_ALREADY_CANCELLED,
   ROOM_NOT_AVAILABLE,

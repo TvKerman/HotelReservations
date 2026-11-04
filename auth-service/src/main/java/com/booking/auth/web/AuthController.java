@@ -5,7 +5,6 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.booking.auth.domain.Role;
 import com.booking.auth.domain.User;
@@ -14,6 +13,8 @@ import com.booking.auth.security.JwtService;
 import com.booking.auth.web.dto.AuthResponse;
 import com.booking.auth.web.dto.LoginRequest;
 import com.booking.auth.web.dto.RegisterRequest;
+import com.booking.common.error.BusinessException;
+import com.booking.common.error.ErrorCode;
 
 @RestController
 @RequestMapping("/auth")
@@ -34,7 +35,8 @@ public class AuthController {
   @ResponseStatus(HttpStatus.CREATED)
   public AuthResponse register(@Valid @RequestBody RegisterRequest req) {
     if (users.existsByEmail(req.email())) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
+      throw new BusinessException(
+          HttpStatus.CONFLICT, ErrorCode.EMAIL_ALREADY_REGISTERED, "Email already registered");
     }
     User user = new User(req.email(), passwordEncoder.encode(req.password()), Role.USER);
     users.save(user);
@@ -47,9 +49,14 @@ public class AuthController {
         users
             .findByEmail(req.email())
             .orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
+                () ->
+                    new BusinessException(
+                        HttpStatus.UNAUTHORIZED,
+                        ErrorCode.INVALID_CREDENTIALS,
+                        "Invalid credentials"));
     if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+      throw new BusinessException(
+          HttpStatus.UNAUTHORIZED, ErrorCode.INVALID_CREDENTIALS, "Invalid credentials");
     }
     return toResponse(user);
   }

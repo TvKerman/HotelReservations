@@ -11,8 +11,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
+import com.booking.common.error.BusinessException;
+import com.booking.common.error.ErrorCode;
 import com.booking.hotel.domain.Hotel;
 import com.booking.hotel.repo.HotelRepository;
 import com.booking.hotel.web.dto.*;
@@ -50,7 +51,9 @@ public class HotelService {
         .findById(id)
         .map(this::toDto)
         .orElseThrow(
-            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Hotel not found: " + id));
+            () ->
+                new BusinessException(
+                    HttpStatus.NOT_FOUND, ErrorCode.HOTEL_NOT_FOUND, "Hotel not found: " + id));
   }
 
   public HotelDto create(CreateHotelRequest req) {
@@ -64,7 +67,9 @@ public class HotelService {
         hotels
             .findById(id)
             .orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Hotel not found: " + id));
+                () ->
+                    new BusinessException(
+                        HttpStatus.NOT_FOUND, ErrorCode.HOTEL_NOT_FOUND, "Hotel not found: " + id));
     h.setName(req.name());
     h.setCity(req.city());
     h.setStars(req.stars());
@@ -74,7 +79,8 @@ public class HotelService {
 
   public void delete(Long id) {
     if (!hotels.existsById(id)) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Hotel not found: " + id);
+      throw new BusinessException(
+          HttpStatus.NOT_FOUND, ErrorCode.HOTEL_NOT_FOUND, "Hotel not found: " + id);
     }
     hotels.deleteById(id);
   }
@@ -86,8 +92,10 @@ public class HotelService {
             .findById(hotelId)
             .orElseThrow(
                 () ->
-                    new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Hotel not found: " + hotelId));
+                    new BusinessException(
+                        HttpStatus.NOT_FOUND,
+                        ErrorCode.HOTEL_NOT_FOUND,
+                        "Hotel not found: " + hotelId));
     var roomList = rooms.roomsOf(hotelId);
     int total = roomList.size();
     int totalBookings = roomList.stream().mapToInt(RoomDto::timesBooked).sum();

@@ -25,10 +25,11 @@ import com.booking.booking.config.SecurityConfig;
 import com.booking.booking.service.BookingService;
 import com.booking.booking.web.dto.BookingDto;
 import com.booking.booking.web.dto.CreateBookingRequest;
+import com.booking.common.error.GlobalExceptionHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @WebMvcTest(BookingController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, GlobalExceptionHandler.class}) // <-- Добавили GlobalExceptionHandler
 @TestPropertySource(
     properties = {"app.security.jwt.secret=dev-secret-change-me-please-1234567890-abcdef"})
 @DisplayName("BookingController - HTTP layer")
@@ -75,7 +76,6 @@ class BookingControllerTest {
   @Test
   @DisplayName("POST /bookings with reversed dates -> 400")
   void createInvalidDates() throws Exception {
-    // checkIn=out (now+3), checkOut=in (now+1) — @AssertTrue должен сработать
     mvc.perform(
             post("/bookings")
                 .with(jwt().jwt(j -> j.claim("uid", 10L).claim("role", "USER")))

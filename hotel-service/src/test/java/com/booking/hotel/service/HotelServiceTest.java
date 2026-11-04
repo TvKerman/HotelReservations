@@ -14,8 +14,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.server.ResponseStatusException;
 
+import com.booking.common.error.BusinessException;
 import com.booking.hotel.domain.Hotel;
 import com.booking.hotel.repo.HotelRepository;
 import com.booking.hotel.web.dto.CreateHotelRequest;
@@ -49,7 +49,7 @@ class HotelServiceTest {
     void notFound() {
       when(hotels.findById(99L)).thenReturn(Optional.empty());
       assertThatThrownBy(() -> service.get(99L))
-          .isInstanceOf(ResponseStatusException.class)
+          .isInstanceOf(BusinessException.class)
           .hasMessageContaining("Hotel not found");
     }
   }
@@ -93,7 +93,8 @@ class HotelServiceTest {
     void missing() {
       when(hotels.findById(99L)).thenReturn(Optional.empty());
       assertThatThrownBy(() -> service.update(99L, new UpdateHotelRequest("x", "y", (short) 1, "")))
-          .isInstanceOf(ResponseStatusException.class);
+          .isInstanceOf(BusinessException.class)
+          .hasMessageContaining("Hotel not found");
     }
   }
 
@@ -113,7 +114,7 @@ class HotelServiceTest {
     void missing() {
       when(hotels.existsById(99L)).thenReturn(false);
       assertThatThrownBy(() -> service.delete(99L))
-          .isInstanceOf(ResponseStatusException.class)
+          .isInstanceOf(BusinessException.class)
           .hasMessageContaining("Hotel not found");
     }
   }
@@ -142,7 +143,9 @@ class HotelServiceTest {
     @DisplayName("404 when hotel missing")
     void missing() {
       when(hotels.findById(99L)).thenReturn(Optional.empty());
-      assertThatThrownBy(() -> service.statistics(99L)).isInstanceOf(ResponseStatusException.class);
+      assertThatThrownBy(() -> service.statistics(99L))
+          .isInstanceOf(BusinessException.class)
+          .hasMessageContaining("Hotel not found");
     }
   }
 }

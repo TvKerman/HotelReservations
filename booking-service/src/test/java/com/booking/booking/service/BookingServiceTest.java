@@ -16,7 +16,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.booking.booking.client.HotelClient;
 import com.booking.booking.client.HotelResilientClient;
@@ -25,6 +24,7 @@ import com.booking.booking.domain.BookingStatus;
 import com.booking.booking.repo.BookingRepository;
 import com.booking.booking.web.dto.CreateBookingRequest;
 import com.booking.booking.web.dto.RoomDto;
+import com.booking.common.error.BusinessException;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("BookingService - business logic")
@@ -43,14 +43,9 @@ class BookingServiceTest {
   static final LocalDate IN = LocalDate.now().plusDays(1);
   static final LocalDate OUT = LocalDate.now().plusDays(3);
 
-  private static Booking savedBooking(Booking b) {
-    return b;
-  }
-
   @Nested
   @DisplayName("create: happy path")
   class CreateHappyPath {
-
     @Test
     @DisplayName("should return CONFIRMED and call hotel increment")
     void shouldReturnConfirmed() {
@@ -69,7 +64,6 @@ class BookingServiceTest {
   @Nested
   @DisplayName("create: saga compensation")
   class SagaCompensation {
-
     @Test
     @DisplayName("hotel fails -> CANCELLED")
     void hotelFails() {
@@ -89,7 +83,6 @@ class BookingServiceTest {
   @Nested
   @DisplayName("create: idempotency")
   class Idempotency {
-
     @Test
     @DisplayName("same key -> returns existing without new save or hotel call")
     void sameKey() {
@@ -109,13 +102,12 @@ class BookingServiceTest {
   @Nested
   @DisplayName("create: validation")
   class CreateValidation {
-
     @Test
     @DisplayName("checkOut <= checkIn -> 400")
     void reversedDates() {
       var req = new CreateBookingRequest(HOTEL_ID, ROOM_ID, OUT, IN);
       assertThatThrownBy(() -> service.create(req, USER_ID, EMAIL, null))
-          .isInstanceOf(ResponseStatusException.class)
+          .isInstanceOf(BusinessException.class)
           .hasMessageContaining("checkOut must be after checkIn");
     }
 
@@ -124,7 +116,7 @@ class BookingServiceTest {
     void pastCheckIn() {
       var req = new CreateBookingRequest(HOTEL_ID, ROOM_ID, LocalDate.now().minusDays(1), OUT);
       assertThatThrownBy(() -> service.create(req, USER_ID, EMAIL, null))
-          .isInstanceOf(ResponseStatusException.class)
+          .isInstanceOf(BusinessException.class)
           .hasMessageContaining("cannot be in the past");
     }
 
@@ -134,7 +126,7 @@ class BookingServiceTest {
       var req = new CreateBookingRequest(HOTEL_ID, ROOM_ID, IN, OUT);
       when(bookings.countOverlappingActive(ROOM_ID, IN, OUT)).thenReturn(1L);
       assertThatThrownBy(() -> service.create(req, USER_ID, EMAIL, null))
-          .isInstanceOf(ResponseStatusException.class)
+          .isInstanceOf(BusinessException.class)
           .hasMessageContaining("already booked");
     }
   }
@@ -142,7 +134,6 @@ class BookingServiceTest {
   @Nested
   @DisplayName("create: auto-select")
   class AutoSelect {
-
     @Test
     @DisplayName("roomId=null -> picks first non-overlapping from available")
     void autoPicksFirst() {
@@ -168,7 +159,7 @@ class BookingServiceTest {
           .thenReturn(List.of(new RoomDto(ROOM_ID, HOTEL_ID, "101", (short) 2, null, 0)));
       when(bookings.countOverlappingActive(anyLong(), any(), any())).thenReturn(1L);
       assertThatThrownBy(() -> service.create(req, USER_ID, EMAIL, null))
-          .isInstanceOf(ResponseStatusException.class)
+          .isInstanceOf(BusinessException.class)
           .hasMessageContaining("No rooms available");
     }
   }
@@ -176,7 +167,6 @@ class BookingServiceTest {
   @Nested
   @DisplayName("cancel")
   class Cancel {
-
     @Test
     @DisplayName("own booking -> CANCELLED + decrement")
     void cancelOwn() {
@@ -199,7 +189,7 @@ class BookingServiceTest {
       when(bookings.findById(1L)).thenReturn(Optional.of(b));
 
       assertThatThrownBy(() -> service.cancel(1L, USER_ID, false))
-          .isInstanceOf(ResponseStatusException.class)
+          .isInstanceOf(BusinessException.class)
           .hasMessageContaining("Access denied");
     }
 
@@ -223,7 +213,7 @@ class BookingServiceTest {
       when(bookings.findById(1L)).thenReturn(Optional.of(b));
 
       assertThatThrownBy(() -> service.cancel(1L, USER_ID, false))
-          .isInstanceOf(ResponseStatusException.class)
+          .isInstanceOf(BusinessException.class)
           .hasMessageContaining("already cancelled");
     }
   }
@@ -231,13 +221,12 @@ class BookingServiceTest {
   @Nested
   @DisplayName("get")
   class Get {
-
     @Test
     @DisplayName("not found -> 404")
     void notFound() {
       when(bookings.findById(99L)).thenReturn(Optional.empty());
       assertThatThrownBy(() -> service.get(99L, USER_ID, false))
-          .isInstanceOf(ResponseStatusException.class)
+          .isInstanceOf(BusinessException.class)
           .hasMessageContaining("Booking not found");
     }
 
@@ -250,7 +239,7 @@ class BookingServiceTest {
       when(bookings.findById(1L)).thenReturn(Optional.of(b));
 
       assertThatThrownBy(() -> service.get(1L, USER_ID, false))
-          .isInstanceOf(ResponseStatusException.class)
+          .isInstanceOf(BusinessException.class)
           .hasMessageContaining("Access denied");
     }
   }

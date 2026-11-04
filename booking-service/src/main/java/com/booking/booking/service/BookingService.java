@@ -13,7 +13,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.booking.booking.client.HotelClient;
 import com.booking.booking.client.HotelResilientClient;
@@ -23,6 +22,8 @@ import com.booking.booking.repo.BookingRepository;
 import com.booking.booking.web.dto.BookingDto;
 import com.booking.booking.web.dto.CreateBookingRequest;
 import com.booking.booking.web.dto.RoomDto;
+import com.booking.common.error.BusinessException;
+import com.booking.common.error.ErrorCode;
 
 @Service
 public class BookingService {
@@ -53,10 +54,12 @@ public class BookingService {
     }
 
     if (!req.checkOut().isAfter(req.checkIn())) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "checkOut must be after checkIn");
+      throw new BusinessException(
+          HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED, "checkOut must be after checkIn");
     }
     if (req.checkIn().isBefore(LocalDate.now())) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "checkIn cannot be in the past");
+      throw new BusinessException(
+          HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED, "checkIn cannot be in the past");
     }
 
     Long roomId = req.roomId();
@@ -69,12 +72,16 @@ public class BookingService {
               .findFirst()
               .orElseThrow(
                   () ->
-                      new ResponseStatusException(
-                          HttpStatus.CONFLICT, "No rooms available for the requested dates"));
+                      new BusinessException(
+                          HttpStatus.CONFLICT,
+                          ErrorCode.NO_ROOMS_AVAILABLE,
+                          "No rooms available for the requested dates"));
     } else {
       if (hasConflict(roomId, req.checkIn(), req.checkOut())) {
-        throw new ResponseStatusException(
-            HttpStatus.CONFLICT, "Room is already booked for these dates");
+        throw new BusinessException(
+            HttpStatus.CONFLICT,
+            ErrorCode.ROOM_NOT_AVAILABLE,
+            "Room is already booked for these dates");
       }
     }
 
@@ -96,11 +103,14 @@ public class BookingService {
         var existing = bookings.findByIdempotencyKey(idempotencyKey);
         if (existing.isPresent()) return toDto(existing.get());
       }
-      throw new ResponseStatusException(
-          HttpStatus.CONFLICT, "Room is already booked for these dates");
+      throw new BusinessException(
+          HttpStatus.CONFLICT,
+          ErrorCode.ROOM_NOT_AVAILABLE,
+          "Room is already booked for these dates");
     } catch (CannotAcquireLockException e) {
       log.warn("Deadlock during concurrent booking for room {}, treating as conflict", roomId);
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "Booking conflict, please retry");
+      throw new BusinessException(
+          HttpStatus.CONFLICT, ErrorCode.ROOM_NOT_AVAILABLE, "Booking conflict, please retry");
     }
 
     try {
@@ -124,17 +134,21 @@ public class BookingService {
       } catch (Exception ignore) {
       }
       booking.setStatus(BookingStatus.CANCELLED);
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "Booking conflict, please retry");
+      throw new BusinessException(
+          HttpStatus.CONFLICT,
+          ErrorCode.BOOKING_CONFIRMATION_FAILED,
+          "Booking conflict, please retry");
     } catch (Exception e) {
       log.error("Confirm failed for bookingId={}, compensating", booking.getId(), e);
       try {
         resilientClient.decrementBooked(req.hotelId(), roomId);
       } catch (Exception ignore) {
-        log.error("Compensation also failed for bookingId={}", booking.getId(), ignore);
       }
       booking.setStatus(BookingStatus.CANCELLED);
-      throw new ResponseStatusException(
-          HttpStatus.INTERNAL_SERVER_ERROR, "Booking confirmation failed");
+      throw new BusinessException(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          ErrorCode.BOOKING_CONFIRMATION_FAILED,
+          "Booking confirmation failed");
     }
 
     log.info(
@@ -167,9 +181,11 @@ public class BookingService {
         bookings
             .findById(id)
             .orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
+                () ->
+                    new BusinessException(
+                        HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND, "Booking not found"));
     if (!admin && !Objects.equals(b.getUserId(), userId)) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+      throw new BusinessException(HttpStatus.FORBIDDEN, ErrorCode.FORBIDDEN, "Access denied");
     }
     return toDto(b);
   }
@@ -180,12 +196,15 @@ public class BookingService {
         bookings
             .findById(id)
             .orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
+                () ->
+                    new BusinessException(
+                        HttpStatus.NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND, "Booking not found"));
     if (!admin && !Objects.equals(b.getUserId(), userId)) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+      throw new BusinessException(HttpStatus.FORBIDDEN, ErrorCode.FORBIDDEN, "Access denied");
     }
     if (b.getStatus() == BookingStatus.CANCELLED) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "Booking already cancelled");
+      throw new BusinessException(
+          HttpStatus.CONFLICT, ErrorCode.BOOKING_ALREADY_CANCELLED, "Booking already cancelled");
     }
     b.setStatus(BookingStatus.CANCELLED);
     try {

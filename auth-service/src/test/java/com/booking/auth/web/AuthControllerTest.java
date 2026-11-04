@@ -27,10 +27,11 @@ import com.booking.auth.repo.UserRepository;
 import com.booking.auth.security.JwtService;
 import com.booking.auth.web.dto.LoginRequest;
 import com.booking.auth.web.dto.RegisterRequest;
+import com.booking.common.error.GlobalExceptionHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @WebMvcTest(AuthController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, GlobalExceptionHandler.class}) // <-- Добавили GlobalExceptionHandler
 @TestPropertySource(
     properties = {
       "app.security.jwt.secret=test-secret-at-least-32-bytes-long-1234567890",

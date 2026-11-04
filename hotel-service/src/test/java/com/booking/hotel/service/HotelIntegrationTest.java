@@ -10,8 +10,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.data.domain.PageRequest;
 
+import com.booking.common.error.BusinessException;
 import com.booking.hotel.AbstractIntegrationTest;
 import com.booking.hotel.repo.HotelRepository;
 import com.booking.hotel.repo.RoomRepository;
@@ -27,7 +28,7 @@ class HotelIntegrationTest extends AbstractIntegrationTest {
 
   @BeforeEach
   void clean() {
-    hotels.deleteAll(); // CASCADE удалит rooms
+    hotels.deleteAll();
   }
 
   @Nested
@@ -64,18 +65,14 @@ class HotelIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("by city")
     void byCity() {
-      var page =
-          hotelService.search(
-              "Moscow", null, null, org.springframework.data.domain.PageRequest.of(0, 10));
+      var page = hotelService.search("Moscow", null, null, PageRequest.of(0, 10));
       assertThat(page.getTotalElements()).isEqualTo(2);
     }
 
     @Test
     @DisplayName("by stars")
     void byStars() {
-      var page =
-          hotelService.search(
-              null, (short) 5, (short) 5, org.springframework.data.domain.PageRequest.of(0, 10));
+      var page = hotelService.search(null, (short) 5, (short) 5, PageRequest.of(0, 10));
       assertThat(page.getTotalElements()).isEqualTo(2);
     }
   }
@@ -103,14 +100,13 @@ class HotelIntegrationTest extends AbstractIntegrationTest {
               () ->
                   roomService.create(
                       hotelId, new CreateRoomRequest("101", (short) 2, BigDecimal.TEN)))
-          .isInstanceOf(ResponseStatusException.class)
+          .isInstanceOf(BusinessException.class)
           .hasMessageContaining("already exists");
     }
 
     @Test
     @DisplayName("available sorted by times_booked asc, id asc")
     void availableSorted() {
-      // увеличим times_booked у "101" и "103"
       roomService.incrementBooked(
           rooms.findByHotelId(hotelId).stream()
               .filter(r -> r.getNumber().equals("101"))

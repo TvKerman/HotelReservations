@@ -25,10 +25,6 @@ import com.booking.booking.domain.BookingStatus;
 import com.booking.booking.repo.BookingRepository;
 import com.booking.booking.web.dto.CreateBookingRequest;
 
-/**
- * Integration tests against a real PostgreSQL (Testcontainers). Only Feign clients are mocked.
- * BookingRepository and the service are real.
- */
 @DisplayName("Booking integration (real Postgres + EXCLUDE constraint)")
 class BookingIntegrationTest extends AbstractIntegrationTest {
 
@@ -53,7 +49,6 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
   @Nested
   @DisplayName("saga with real DB")
   class Saga {
-
     @Test
     @DisplayName("happy path: booking persisted as CONFIRMED, increment called")
     void happyPath() {
@@ -87,7 +82,6 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
   @Nested
   @DisplayName("idempotency (real DB)")
   class Idempotency {
-
     @Test
     @DisplayName("same key twice -> same booking, one DB row")
     void sameKey() {
@@ -104,7 +98,6 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
   @Nested
   @DisplayName("DB EXCLUDE constraint")
   class ExcludeConstraint {
-
     @Test
     @DisplayName("overlapping INSERT is rejected by DB even if service check bypassed")
     void overlapRejectedByDb() {
@@ -145,7 +138,6 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
   @Nested
   @DisplayName("parallel bookings on the same room")
   class Parallel {
-
     @Test
     @DisplayName("10 threads -> exactly 1 CONFIRMED, rest fail")
     void parallelNoOverbooking() throws Exception {
@@ -184,7 +176,6 @@ class BookingIntegrationTest extends AbstractIntegrationTest {
   @Nested
   @DisplayName("cancel with real DB")
   class Cancel {
-
     @Test
     @DisplayName("cancel confirmed booking -> CANCELLED in DB + decrement + slot re-usable")
     void cancelConfirmed() {

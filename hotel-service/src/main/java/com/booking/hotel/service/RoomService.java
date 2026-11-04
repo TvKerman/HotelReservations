@@ -10,8 +10,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
+import com.booking.common.error.BusinessException;
+import com.booking.common.error.ErrorCode;
 import com.booking.hotel.domain.Hotel;
 import com.booking.hotel.domain.Room;
 import com.booking.hotel.repo.HotelRepository;
@@ -54,7 +55,8 @@ public class RoomService {
   @Transactional(readOnly = true)
   public List<RoomDto> availableForHotel(Long hotelId) {
     if (!hotels.existsById(hotelId)) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Hotel not found: " + hotelId);
+      throw new BusinessException(
+          HttpStatus.NOT_FOUND, ErrorCode.HOTEL_NOT_FOUND, "Hotel not found: " + hotelId);
     }
     return rooms.findAvailableOrdered(hotelId).stream().map(this::toDto).toList();
   }
@@ -65,11 +67,15 @@ public class RoomService {
             .findById(hotelId)
             .orElseThrow(
                 () ->
-                    new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Hotel not found: " + hotelId));
+                    new BusinessException(
+                        HttpStatus.NOT_FOUND,
+                        ErrorCode.HOTEL_NOT_FOUND,
+                        "Hotel not found: " + hotelId));
     if (rooms.existsByHotelIdAndNumber(hotelId, req.number())) {
-      throw new ResponseStatusException(
-          HttpStatus.CONFLICT, "Room number already exists in this hotel");
+      throw new BusinessException(
+          HttpStatus.CONFLICT,
+          ErrorCode.ROOM_NUMBER_DUPLICATE,
+          "Room number already exists in this hotel");
     }
     Room r = new Room(h, req.number(), req.capacity(), req.price());
     rooms.save(r);
@@ -82,14 +88,20 @@ public class RoomService {
             .findById(roomId)
             .orElseThrow(
                 () ->
-                    new ResponseStatusException(HttpStatus.NOT_FOUND, "Room not found: " + roomId));
+                    new BusinessException(
+                        HttpStatus.NOT_FOUND,
+                        ErrorCode.ROOM_NOT_FOUND,
+                        "Room not found: " + roomId));
     if (!r.getHotel().getId().equals(hotelId)) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Room not in this hotel");
+      throw new BusinessException(
+          HttpStatus.NOT_FOUND, ErrorCode.ROOM_NOT_IN_HOTEL, "Room not in this hotel");
     }
     if (!r.getNumber().equals(req.number())
         && rooms.existsByHotelIdAndNumber(hotelId, req.number())) {
-      throw new ResponseStatusException(
-          HttpStatus.CONFLICT, "Room number already exists in this hotel");
+      throw new BusinessException(
+          HttpStatus.CONFLICT,
+          ErrorCode.ROOM_NUMBER_DUPLICATE,
+          "Room number already exists in this hotel");
     }
     r.setNumber(req.number());
     r.setCapacity(req.capacity());
@@ -103,9 +115,13 @@ public class RoomService {
             .findById(roomId)
             .orElseThrow(
                 () ->
-                    new ResponseStatusException(HttpStatus.NOT_FOUND, "Room not found: " + roomId));
+                    new BusinessException(
+                        HttpStatus.NOT_FOUND,
+                        ErrorCode.ROOM_NOT_FOUND,
+                        "Room not found: " + roomId));
     if (!r.getHotel().getId().equals(hotelId)) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Room not in this hotel");
+      throw new BusinessException(
+          HttpStatus.NOT_FOUND, ErrorCode.ROOM_NOT_IN_HOTEL, "Room not in this hotel");
     }
     rooms.delete(r);
   }
@@ -116,7 +132,10 @@ public class RoomService {
             .findById(roomId)
             .orElseThrow(
                 () ->
-                    new ResponseStatusException(HttpStatus.NOT_FOUND, "Room not found: " + roomId));
+                    new BusinessException(
+                        HttpStatus.NOT_FOUND,
+                        ErrorCode.ROOM_NOT_FOUND,
+                        "Room not found: " + roomId));
     r.setTimesBooked(r.getTimesBooked() + 1);
     rooms.saveAndFlush(r);
   }
@@ -127,7 +146,10 @@ public class RoomService {
             .findById(roomId)
             .orElseThrow(
                 () ->
-                    new ResponseStatusException(HttpStatus.NOT_FOUND, "Room not found: " + roomId));
+                    new BusinessException(
+                        HttpStatus.NOT_FOUND,
+                        ErrorCode.ROOM_NOT_FOUND,
+                        "Room not found: " + roomId));
     r.setTimesBooked(Math.max(0, r.getTimesBooked() - 1));
     rooms.saveAndFlush(r);
   }

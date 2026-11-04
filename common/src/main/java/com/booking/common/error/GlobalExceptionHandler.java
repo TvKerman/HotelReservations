@@ -24,6 +24,26 @@ public class GlobalExceptionHandler {
   public static final String TRACE_HEADER = "X-Correlation-Id";
   public static final String MDC_KEY = "traceId";
 
+  @ExceptionHandler(BusinessException.class)
+  public ResponseEntity<ErrorDTO> handleBusinessException(
+      BusinessException ex, HttpServletRequest req) {
+    log.warn(
+        "{} {} -> {}: {}",
+        req.getMethod(),
+        req.getRequestURI(),
+        ex.getStatus().value(),
+        ex.getMessage());
+    return ResponseEntity.status(ex.getStatus())
+        .body(
+            ErrorDTO.of(
+                ex.getStatus().value(),
+                ex.getStatus().name(),
+                ex.getCode(),
+                ex.getMessage(),
+                req.getRequestURI(),
+                traceId(req)));
+  }
+
   @ExceptionHandler(ResponseStatusException.class)
   public ResponseEntity<ErrorDTO> handleResponseStatus(
       ResponseStatusException ex, HttpServletRequest req) {
@@ -49,21 +69,6 @@ public class GlobalExceptionHandler {
                 "FORBIDDEN",
                 ErrorCode.FORBIDDEN,
                 "Access denied",
-                req.getRequestURI(),
-                traceId(req)));
-  }
-
-  @ExceptionHandler(PropertyReferenceException.class)
-  public ResponseEntity<ErrorDTO> handlePropertyReference(
-      PropertyReferenceException ex, HttpServletRequest req) {
-    log.warn("{} {} -> 400 BAD_REQUEST: {}", req.getMethod(), req.getRequestURI(), ex.getMessage());
-    return ResponseEntity.badRequest()
-        .body(
-            ErrorDTO.of(
-                400,
-                "BAD_REQUEST",
-                ErrorCode.BAD_REQUEST,
-                "Invalid sort field: " + ex.getPropertyName(),
                 req.getRequestURI(),
                 traceId(req)));
   }
@@ -98,6 +103,21 @@ public class GlobalExceptionHandler {
                 "BAD_REQUEST",
                 ErrorCode.BAD_REQUEST,
                 ex.getMessage(),
+                req.getRequestURI(),
+                traceId(req)));
+  }
+
+  @ExceptionHandler(PropertyReferenceException.class)
+  public ResponseEntity<ErrorDTO> handlePropertyReference(
+      PropertyReferenceException ex, HttpServletRequest req) {
+    log.warn("{} {} -> 400 BAD_REQUEST: {}", req.getMethod(), req.getRequestURI(), ex.getMessage());
+    return ResponseEntity.badRequest()
+        .body(
+            ErrorDTO.of(
+                400,
+                "BAD_REQUEST",
+                ErrorCode.BAD_REQUEST,
+                "Invalid sort field: " + ex.getPropertyName(),
                 req.getRequestURI(),
                 traceId(req)));
   }

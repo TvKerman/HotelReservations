@@ -21,6 +21,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.booking.common.error.GlobalExceptionHandler;
 import com.booking.hotel.config.SecurityConfig;
 import com.booking.hotel.service.HotelService;
 import com.booking.hotel.web.dto.CreateHotelRequest;
@@ -30,7 +31,7 @@ import com.booking.hotel.web.dto.UpdateHotelRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @WebMvcTest(HotelController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, GlobalExceptionHandler.class}) // <-- Добавили GlobalExceptionHandler
 @TestPropertySource(
     properties = {"app.security.jwt.secret=dev-secret-change-me-please-1234567890-abcdef"})
 @DisplayName("HotelController - HTTP layer")

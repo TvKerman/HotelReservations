@@ -99,7 +99,31 @@ flowchart TB
 docker-compose up -d --build
 ```
 
-### Ручной запуск
+*Флаг `--build` гарантирует, что образы пересоберутся с учетом последних изменений в коде.*
+
+### 2. Проверка статуса
+Сервисам нужно время на инициализацию, миграции Flyway и регистрацию в Eureka. Около 30 секунд на старт всех сервисов
+```bash
+docker-compose ps
+```
+**Ожидаемый результат:** все контейнеры (`discovery-service`, `auth-service`, `hotel-service`, `booking-service`, `gateway-service`, `postgres`) должны быть в состоянии `Up (healthy)`.
+
+### 3. Доступ к интерфейсам
+- **Swagger UI (API Documentation):** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+- **Eureka Dashboard (Service Discovery):** [http://localhost:8761](http://localhost:8761)
+
+### 4. Остановка
+- Остановить все контейнеры (сохраняя данные БД):
+  ```bash
+  docker-compose down
+  ```
+- Остановить и удалить данные (полный сброс):
+  ```bash
+  docker-compose down -v
+  ```
+
+
+### Локальный запуск
 
 ```bash
 # Сборка
@@ -162,6 +186,7 @@ mvn -pl booking-service -am test
 # Только интеграционные тесты (Testcontainers)
 mvn -pl booking-service -am test -Dtest='*IntegrationTest'
 ```
+> **Важно:** Для интеграционных тестов должен быть запущен **Docker** (Testcontainers поднимает контейнер с PostgreSQL).
 
 Состав тестов:
 
@@ -174,6 +199,13 @@ mvn -pl booking-service -am test -Dtest='*IntegrationTest'
 | **Итого** | | **72** |
 
 Интеграционные тесты используют реальный PostgreSQL через Testcontainers и реальный JWT/BCrypt. Параллельные бронирования проверяются запуском 10 одновременных потоков с ожиданием ровно одного успешного бронирования.
+
+### Проверка форматирования (Spotless)
+```bash
+mvn verify -DskipTests
+```
+Spotless проверяет, что весь код отформатирован по стандарту Google Java Format. Для автоисправления: `mvn spotless:apply`.
+
 
 ## HTTP API
 
